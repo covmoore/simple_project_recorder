@@ -13,47 +13,47 @@ char* CREATE_TEXTS[] = { \
 };
 
 int userCount = 0;
+int arraySize = 0;
 
 
-int create_new_user(char name[]) {
+int create_new_user(char name[], char*** allUsers) {
     FILE *fptr;
     char userInput[INPUT_MAX];
     printf("Creating new user file...\n");
 
     char fileExt[] = ".txt";
-
     char fileName[INPUT_MAX + sizeof(fileExt)] = "";
-
-    //strcpy(fileName, name);
-
-    // for (int i = 0; i < strlen(fileExt); i++) {
-    //     fileName[strlen(name)+i-1] = fileExt[i]; 
-    //
 
     strcat(fileName, "user_data/");
     strcat(fileName, name);
     strcat(fileName, ".txt");
 
-    //printf("File Name: %s", fileName);
-
     fptr = fopen(fileName, "w");
+    if(fptr == NULL) {
+        printf("cant write to file.\n");
+    }
+    userCount++;
+    if(userCount >= arraySize) {
+        arraySize = userCount + 5;
+        char** temp = (char**)malloc((arraySize) * sizeof(char*));
+        memcpy(temp, (*allUsers), sizeof((*allUsers)));
+        (*allUsers)[userCount-1] = (char*)malloc((strlen(name)+1) * sizeof(char));
+    }
+    else {
+        (*allUsers)[userCount-1] = (char*)malloc((strlen(name)+1) * sizeof(char));
+    }
+
+    strcpy((*allUsers)[userCount-1], name);
 
     for (int i = 0; i < 5; i++) {
         printf("%s", CREATE_TEXTS[i]);
+        fgets(userInput, INPUT_MAX, stdin);
+        remove_new_line(&userInput);
+        if(i != 4) {
+            strcat(userInput, ",");
+        }
+        fprintf(fptr, userInput);
     }
-    // printf("\nProject Name: ");
-    // fgets(userInput, INPUT_MAX, stdin);
-    // strcat(userInput, ",");
-    // fprintf(fptr, userInput);
-
-    // printf("\nProject Description (max 100 chars): ");
-    // fgets(userInput, INPUT_MAX, stdin);
-    // strcat(fptr, userInput);
-    // fprintf(fptr, userInput);
-
-    // printf("\nDoes this project have a repo? (Y/N):");
-
-
 
     fclose(fptr);
     return 0;
@@ -75,7 +75,7 @@ int print_menu() {
 int enter_data(char **allUsers) {
     FILE *fptr;
     if(userCount == 0) {
-        printf("There are no current users.\nType a name to enter new user's data...\n");
+        printf("There are no current users.\nType a name to enter a new user's data...\n");
     }
     else {
         printf("Current Users...\n");
@@ -85,7 +85,7 @@ int enter_data(char **allUsers) {
         printf("Type the name of an existing user to edit their data \n");
         printf("or type a new name to enter a new user's data");
     }
-    printf("Or type \"exit\" to exit the program...\n");
+    printf("Or type \"exit\" to go back to the menu...\n");
 
     char userInput[INPUT_MAX];
 
@@ -93,16 +93,15 @@ int enter_data(char **allUsers) {
     do{
         fgets(userInput, INPUT_MAX, stdin);
         remove_new_line(userInput);
-        //printf("user input: %s%s\n", userInput, "line");
 
         for(int i = 0; i < userCount; i++) {
             if(strcmp(allUsers[i], userInput) == 0) {
                 //edit_existing_user(userInput);
-                return 0;
+                return;
             }
         }
 
-        create_new_user(userInput);
+        create_new_user(userInput, &allUsers);
 
     } while(strcmp(userInput, "exit") == 0);
 
@@ -114,6 +113,8 @@ int get_all_users(char ***allUsers) {
     FILE *fptr;
     fptr = fopen("user_data/all_users.txt", "r");
     if(fptr == NULL) {
+        arraySize = 5;
+        (*allUsers) = (char**)malloc(arraySize * sizeof(char*));
         printf("File \"%s\" does not exist\n", "all_users.txt");
         return 1;
     }
@@ -125,7 +126,8 @@ int get_all_users(char ***allUsers) {
         }
         if(lineNumber == 0) {
             userCount = atoi(line);
-            (*allUsers) = (char**)malloc(userCount * sizeof(char*));
+            arraySize = userCount + 5;
+            (*allUsers) = (char**)malloc(arraySize * sizeof(char*));
             if((*allUsers) == NULL) {
                 printf(stderr, "Memory allocation failed\n");
                 return 1;
@@ -137,6 +139,10 @@ int get_all_users(char ***allUsers) {
         (*allUsers)[lineNumber-1] = (char*)malloc((strlen(line)+1) * sizeof(char));
         strcpy((*allUsers)[lineNumber-1], line);
         lineNumber++;
+    }
+    if(lineNumber == 0) {
+        arraySize = 5;
+        (*allUsers) = (char**)malloc(arraySize * sizeof(char*));
     }
     fclose(fptr);
     return 0;
