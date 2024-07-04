@@ -15,7 +15,6 @@ char* CREATE_TEXTS[] = { \
 int userCount = 0;
 int arraySize = 0;
 
-
 int create_new_user(char name[], char*** allUsers) {
     FILE *fptr;
     char userInput[INPUT_MAX];
@@ -56,6 +55,25 @@ int create_new_user(char name[], char*** allUsers) {
     }
 
     fclose(fptr);
+
+    FILE *fptr1;
+
+    fptr1 = fopen("user_data/all_users.txt", "w");
+
+    if (fptr1 == NULL) {
+        printf("can't write to file.");
+    }
+    char* sCount;
+    itoa(userCount, sCount, 10);
+    fprintf(fptr1, sCount);
+    fprintf(fptr1, "\n");
+    for(int i = 0; i < userCount; i++) {
+        fprintf(fptr1, (*allUsers)[i]);
+        fprintf(fptr1, "\n");
+    }
+
+    fclose(fptr1);
+
     return 0;
 
 }
@@ -125,6 +143,7 @@ int get_all_users(char ***allUsers) {
             return 1;
         }
         if(lineNumber == 0) {
+            remove_new_line(&line);
             userCount = atoi(line);
             arraySize = userCount + 5;
             (*allUsers) = (char**)malloc(arraySize * sizeof(char*));
